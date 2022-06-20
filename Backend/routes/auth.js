@@ -3,7 +3,7 @@ const router = express.Router();
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const JWT_Secret = "Rajarshiisagoodboy";
+const JWT_Secret = "Rajarshiisagoodboy"; //JWT token
 
 const { body, validationResult } = require("express-validator");
 
@@ -52,6 +52,44 @@ router.post(
       const authtoken = jwt.sign(data, JWT_Secret);
 
       res.json({ authtoken });
+    } catch (error) {
+      console.log(error);
+      res.status(500).send("Some error occurred: " + error.message);
+    }
+  }
+);
+
+//Authentication of the user for login
+router.post(
+  //validation using express-validator
+  "/login",
+  [
+    body("email", "Enter a valid email").isEmail(),
+    body("password", "password cannot be blank").exists({ min: 7 }),
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    const { email, password } = req.body;
+    try {
+      let user = await User.findOne({ email: req.body.email });
+      if (!user) {
+        return res
+          .status(400)
+          .json({ error: "Please try to login with correct credentials" });
+      }
+      const passwordCompare = await bcrypt.compare(password, user.password);
+      if (!passwordCompare) {
+        return res.status(400).json({ error: "enter correct creds" });
+      }
+
+      const payload = {
+        user: { id: user.id },
+      };
+      const authtoken = jwt.sign(payload, JWT_Secret);
+      res.json(authtoken);
     } catch (error) {
       console.log(error);
       res.status(500).send("Some error occurred: " + error.message);
