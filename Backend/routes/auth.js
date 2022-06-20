@@ -4,10 +4,11 @@ const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const JWT_Secret = "Rajarshiisagoodboy"; //JWT token
+var fetchUser = require("../middleware/fetchUser");
 
 const { body, validationResult } = require("express-validator");
 
-//Create User using Post
+//Route1:Create User using Post
 router.post(
   //validation using express-validator
   "/createUser",
@@ -59,7 +60,7 @@ router.post(
   }
 );
 
-//Authentication of the user for login
+//Route:3Authentication of the user for login
 router.post(
   //validation using express-validator
   "/login",
@@ -96,5 +97,17 @@ router.post(
     }
   }
 );
+
+//Route3:Get logged in user details.. Login Required
+router.post("/getInfo", fetchUser, async (req, res) => {
+  try {
+    userId = req.user.id;
+    const user = await User.findById(userId).select("-password");
+    res.send(user);
+  } catch (error) {
+    console.log(error);
+    res.status(500).send("Some error occurred: ");
+  }
+});
 
 module.exports = router;
